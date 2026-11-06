@@ -16,13 +16,22 @@ detector-aero.ru
         ├─ новое событие «danger» → уведомление
         └─ событие пропало/«clear» → уведомление об отбое
               │
-              ├─ ntfy.sh  → push на телефон
+              ├─ ntfy.sh  → push на телефон (iPhone и Android)
               ├─ Windows  → всплывающее уведомление
               └─ Telegram → (по умолчанию выключен, см. ниже)
 ```
 
 Состояние (какие события уже объявлены) хранится в `state.json`, поэтому перезапуск
 не приводит к повторным уведомлениям. Логи — в `logs\watch-ГГГГ-ММ-ДД.log`.
+
+## Где это может работать круглосуточно
+
+| Вариант | Цена | Задержка | Инструкция |
+|---|---|---|---|
+| GitHub Actions | 0 ₽ | 5–15 мин | [GITHUB-SETUP.md](GITHUB-SETUP.md) |
+| VPS / Raspberry Pi / Linux | 150–300 ₽/мес | 45 сек | [deploy/README-deploy.md](deploy/README-deploy.md) |
+| Android (Termux) | 0 ₽ | 45 сек | [deploy/README-deploy.md](deploy/README-deploy.md) |
+| Этот компьютер (Windows) | 0 ₽ | 45 сек | пока включён |
 
 ## Быстрый старт
 
@@ -70,7 +79,14 @@ powershell -ExecutionPolicy Bypass -File .\install-autostart.ps1 -Uninstall
 3. Проверка: `node watch.mjs --test` — на телефон придёт тестовое сообщение.
 
 Топик — это и есть пароль: кто знает имя, тот может читать и писать. Имя длинное и случайное;
-если оно утекло — поменяйте `channels.ntfy.topic` на своё и переподпишитесь.
+если оно утекло — поменяйте топик и переподпишитесь.
+
+В GitHub Actions топик не хранится в файле, а передаётся через секрет `NTFY_TOPIC`
+(см. `GITHUB-SETUP.md`). Вручную можно задать его переменной окружения:
+
+```powershell
+$env:NTFY_TOPIC="ваш-топик"; node watch.mjs
+```
 
 Свой сервер: укажите `channels.ntfy.server` (например `https://ntfy.mydomain.ru`).
 
