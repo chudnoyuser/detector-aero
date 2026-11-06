@@ -43,6 +43,7 @@ const MODE = args.has('--once') ? 'once'
   : args.has('--test') ? 'test'
   : args.has('--status') ? 'status'
   : args.has('--check') ? 'check'
+  : args.has('--digest') ? 'digest'
   : 'loop';
 
 // ---------------------------------------------------------------- утилиты
@@ -310,6 +311,40 @@ function statusMessage(events) {
   };
 }
 
+// Часовая сводка: приходит всегда, даже когда в небе спокойно.
+function digestMessage(active, recentEvents, windowMinutes = 60) {
+  const places = placeList(active);
+  const time = msk(new Date().toISOString());
+  const recentWord = recentEvents.length
+    ? `За последние ${windowMinutes} мин: ${recentEvents.length} ${plural(recentEvents.length, 'событие', 'события', 'событий')}.`
+    : `За последние ${windowMinutes} мин новых событий не было.`;
+
+  if (!places.length) {
+    return {
+      title: '🟢 Сводка: спокойно',
+      body: `Активных воздушных угроз в районе нет.\n${recentWord}\n\n${time} МСК · detector-aero.ru`,
+      priority: 2,
+      tags: 'white_check_mark',
+    };
+  }
+
+  const lines = places.slice(0, 12).map((p) => `• ${p.name} — ${THREAT_LABEL[p.threat] ?? p.threat}${p.d && p.d > 2 ? ` (~${Math.round(p.d)} км)` : ''}`);
+  return {
+    title: `🔴 Сводка: опасность (${places.length})`,
+    body: `${lines.join('\n')}\n\n${recentWord}\n\n${time} МСК · detector-aero.ru`,
+    priority: 4,
+    tags: 'rotating_light',
+  };
+}
+
+function plural(n, one, few, many) {
+  const n10 = n % 10;
+  const n100 = n % 100;
+  if (n10 === 1 && n100 !== 11) return one;
+  if (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20)) return few;
+  return many;
+}
+
 // ---------------------------------------------------------------- каналы
 
 async function sendNtfy(msg) {
@@ -459,6 +494,19 @@ async function main() {
     const msg = { title: '🛸 Тест уведомлений', body: 'Если вы видите это сообщение — уведомления от Детектор АЭРО настроены.', priority: 4, tags: 'test_tube' };
     const res = await notify(msg);
     console.log(JSON.stringify(res, null, 2));
+    return;
+  }
+
+  if (MODE === 'digest') {
+    // часовая сводка: состояние не меняем, уведомление отправляем всегда
+    const snap = await refreshState();
+    const events = relevant(snap.events);
+    const active = events.filter(isDanger);
+    const since = Date.now() - 60 * 60 * 1000;
+    const recent = events.filter((e) => e.event_time && new Date(e.event_time).getTime() >= since);
+    const msg = digestMessage(active, recent);
+    log(`сводка: активных угроз ${active.length}, событий за час ${recent.length}`);
+    await notify(msg);
     return;
   }
 

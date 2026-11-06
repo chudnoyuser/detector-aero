@@ -39,6 +39,7 @@ detector-aero.ru
 cd "C:\Users\саша\Documents\deepseek-harness\default-workspace\detector-aero"
 
 node watch.mjs --status     # что сейчас в небе над районом
+node watch.mjs --digest      # часовая сводка: опасность/спокойно + события за час
 node watch.mjs --test       # тестовое уведомление во все каналы
 node watch.mjs              # работать постоянно (опрос каждые 45 с)
 node watch.mjs --once       # один опрос, без уведомлений (для проверки)

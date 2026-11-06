@@ -1,0 +1,39 @@
+name: Детектор АЭРО — сводка раз в час
+
+on:
+  schedule:
+    # Каждый час в начале часа. GitHub может задержать запуск на 5–30 минут.
+    - cron: "0 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: detector-aero-digest
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Забрать код
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Проверить, что секрет с топиком задан
+        run: |
+          if [ -z "${{ secrets.NTFY_TOPIC }}" ]; then
+            echo "::error::Не задан секрет NTFY_TOPIC. Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+
+      - name: Отправить сводку
+        run: node watch.mjs --digest
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
