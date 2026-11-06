@@ -61,6 +61,16 @@ powershell -ExecutionPolicy Bypass -File .\install-autostart.ps1 -Uninstall
 
 Всё в `config.json`.
 
+Локальные секреты (топик ntfy, токен бота) держите в `config.local.json` — он в `.gitignore`
+и не попадает в публичный репозиторий. Значения из него накладываются поверх `config.json`:
+
+```json
+{
+  "digestMinutes": 60,
+  "channels": { "ntfy": { "topic": "ваш-топик" } }
+}
+```
+
 | Параметр | Смысл |
 |---|---|
 | `area.center` | Точка отсчёта (Батайск), координаты |
@@ -69,6 +79,7 @@ powershell -ExecutionPolicy Bypass -File .\install-autostart.ps1 -Uninstall
 | `threats` | Какие типы угроз интересны: `uav`, `fpv`, `missile`, `pvo`, `aviation`, `mvsh`, `threat`, `unknown` |
 | `minSeverity` | Минимальная важность события (1–10) |
 | `pollSeconds` | Период опроса, секунды (не меньше 20) |
+| `digestMinutes` | Раз в сколько минут присылать сводку «опасность/спокойно»; `0` — выключено |
 | `channels.ntfy` | Push на телефон через ntfy.sh |
 | `channels.telegram` | Телеграм-бот (в этой сети недоступен, см. ниже) |
 | `channels.windowsToast` | Всплывающие уведомления Windows |

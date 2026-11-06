@@ -93,6 +93,21 @@ if (!config) {
   process.exit(2);
 }
 
+// Локальные секреты (топик ntfy, токен бота) держим в config.local.json —
+// он в .gitignore и не попадает в публичный репозиторий.
+function deepMerge(base, extra) {
+  for (const [key, value] of Object.entries(extra || {})) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      base[key] = deepMerge(base[key] ?? {}, value);
+    } else {
+      base[key] = value;
+    }
+  }
+  return base;
+}
+const localConfig = readJson(path.join(ROOT, 'config.local.json'), null);
+if (localConfig) deepMerge(config, localConfig);
+
 // Секреты можно передавать через переменные окружения — удобно для GitHub Actions,
 // где config.json лежит в открытом репозитории.
 config.channels ??= {};
@@ -539,7 +554,9 @@ async function main() {
   fs.writeFileSync(PID_PATH, String(process.pid));
 
   const interval = Math.max(20, config.pollSeconds ?? 45) * 1000;
-  log(`старт наблюдения: ${config.area?.name ?? 'район'}, опрос каждые ${interval / 1000} с`);
+  const digestMinutes = Number(config.digestMinutes ?? 0);
+  log(`старт наблюдения: ${config.area?.name ?? 'район'}, опрос каждые ${interval / 1000} с` +
+    (digestMinutes > 0 ? `, сводка каждые ${digestMinutes} мин` : ''));
   let backoff = 0;
 
   process.on('SIGINT', () => { log('остановлено пользователем'); fs.rmSync(PID_PATH, { force: true }); process.exit(0); });
@@ -549,6 +566,20 @@ async function main() {
     try {
       const result = await tick({ announce: true });
       if (pollCount === 1) log(`первый опрос: событий в районе ${result.events.length}, активных угроз ${result.active.length}`);
+
+      // сводка по расписанию (независимо от того, были ли события)
+      if (digestMinutes > 0) {
+        const lastMs = state.lastDigest ? new Date(state.lastDigest).getTime() : 0;
+        if (Date.now() - lastMs >= digestMinutes * 60_000) {
+          const since = Date.now() - digestMinutes * 60_000;
+          const recent = result.events.filter((e) => e.event_time && new Date(e.event_time).getTime() >= since);
+          await notify(digestMessage(result.active, recent, digestMinutes));
+          state.lastDigest = new Date().toISOString();
+          saveState();
+          log(`→ сводка: активных угроз ${result.active.length}, событий за ${digestMinutes} мин ${recent.length}`);
+        }
+      }
+
       backoff = 0;
       await sleep(interval);
     } catch (err) {
