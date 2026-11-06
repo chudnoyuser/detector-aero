@@ -1,0 +1,9 @@
+# служебные файлы, которые не нужны в репозитории
+.session.json
+logs/
+.watch.pid
+state.json
+*.log
+
+# локальные настройки и секреты
+config.local.json

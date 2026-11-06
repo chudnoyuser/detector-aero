@@ -1,0 +1,34 @@
+{
+  "area": {
+    "name": "Батайск и окрестности",
+    "center": { "lat": 47.1378, "lon": 39.7517 },
+    "radiusKm": 50,
+    "zones": [
+      "gorodskoy_okrug_bataysk_rostov_oblast",
+      "gorodskoy_okrug_azov_rostov_oblast",
+      "gorodskoy_okrug_rostov_na_donu_rostov_oblast",
+      "aksayskiy_rayon_rostov_oblast",
+      "azovskiy_rayon_rostov_oblast",
+      "bagaevskiy_rayon_rostov_oblast",
+      "gorodskoy_okrug_novocherkassk_rostov_oblast"
+    ]
+  },
+  "threats": ["uav", "fpv", "missile", "pvo", "aviation", "mvsh", "threat", "unknown"],
+  "minSeverity": 1,
+  "pollSeconds": 45,
+  "channels": {
+    "ntfy": {
+      "enabled": true,
+      "server": "https://ntfy.sh",
+      "topic": ""
+    },
+    "telegram": {
+      "enabled": false,
+      "botToken": "",
+      "chatId": ""
+    },
+    "windowsToast": {
+      "enabled": true
+    }
+  }
+}

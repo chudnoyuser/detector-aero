@@ -1,0 +1,58 @@
+name: Детектор АЭРО — проверка неба
+
+on:
+  schedule:
+    # GitHub запускает не точно по расписанию: обычно раз в 5–15 минут.
+    - cron: "*/5 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: detector-aero
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Забрать код
+        uses: actions/checkout@v4
+
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Восстановить состояние (какие события уже объявлены)
+        uses: actions/cache/restore@v4
+        with:
+          path: state.json
+          key: state-${{ github.run_id }}
+          restore-keys: |
+            state-
+
+      - name: Проверить, что секрет с топиком задан
+        run: |
+          if [ -z "${{ secrets.NTFY_TOPIC }}" ]; then
+            echo "::error::Не задан секрет NTFY_TOPIC. Settings → Secrets and variables → Actions → New repository secret"
+            exit 1
+          fi
+
+      - name: Проверить обстановку и отправить уведомления
+        run: node watch.mjs --check
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+
+      - name: Подготовить файл состояния
+        if: always()
+        run: touch state.json
+
+      - name: Сохранить состояние
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: state.json
+          key: state-${{ github.run_id }}
