@@ -53,8 +53,20 @@ cd "C:\Users\саша\Documents\deepseek-harness\default-workspace\detector-aero
 $env:NTFY_TOPIC="dtr-aero-bt-8c4f2e91a7"; node watch.mjs --test
 ```
 
-## Как это устроено
+## Чтобы не было двойных уведомлений
 
+Пока на компьютере работает локальный наблюдатель (задача `DetectorAeroWatch`), он тоже
+отправляет push — и об одном событии придёт два сообщения. Когда убедитесь, что GitHub
+присылает уведомления, локальный лучше остановить:
+
+```powershell
+cd "C:\Users\саша\Documents\deepseek-harness\default-workspace\detector-aero"
+powershell -ExecutionPolicy Bypass -File .\install-autostart.ps1 -Uninstall
+```
+
+Всплывающие уведомления Windows при этом пропадут — останутся push на телефон.
+
+## Как это устроено
 ```
 GitHub Actions (cron */5)
    └─ node watch.mjs --check        один опрос, без цикла
